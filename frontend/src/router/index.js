@@ -7,20 +7,24 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import AdminView from '../views/AdminView.vue'
 import BattleView from '../views/BattleView.vue'
+import BattleCanvasView from '../views/BattleCanvasView.vue'
 import BattleHistoryView from '../views/BattleHistoryView.vue'
 import LeaderboardView from '../views/LeaderboardView.vue'
+import KingdomWarArena from '../views/KingdomWarArena.vue'
 
 const routes = [
   { path: '/', component: DashboardView, meta: { requiresAuth: true }, alias: '/dashboard' },
   { path: '/login', component: LoginView, meta: { guest: true } },
   { path: '/register', component: RegisterView, meta: { guest: true } },
   { path: '/cards', component: CardsView, meta: { requiresAuth: true } },
-  { path: '/battle', component: BattleView, meta: { requiresAuth: true } },
+  { path: '/battle', component: KingdomWarArena, meta: { requiresAuth: true } },
+  { path: '/battle-canvas', component: KingdomWarArena, meta: { requiresAuth: true } },
+  { path: '/war-arena', component: KingdomWarArena, meta: { requiresAuth: true } },
+  { path: '/war-arena/:kingdomId', component: KingdomWarArena, meta: { requiresAuth: true } },
   { path: '/historique-batailles', component: BattleHistoryView, meta: { requiresAuth: true } },
   { path: '/royaume', component: KingdomView, meta: { requiresAuth: true } },
   { path: '/classement', component: LeaderboardView, meta: { requiresAuth: true } },
   { path: '/admin', component: AdminView, meta: { requiresAuth: true, requiresAdmin: true } },
-  // Placeholder routes
   { path: '/shop', component: DashboardView, meta: { requiresAuth: true } },
   { path: '/clan', component: DashboardView, meta: { requiresAuth: true } },
 ]

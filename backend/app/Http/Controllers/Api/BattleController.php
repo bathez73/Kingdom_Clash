@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chest;
+use App\Models\Quest;
 use App\Models\User;
 use App\Models\Kingdom;
 use App\Services\BattleService;
@@ -81,10 +82,12 @@ class BattleController extends Controller
         }
         
         $miniGameScore = $request->input('score', 0);
-        $result = $this->battleService->attack($userKingdom, $opponentKingdom, $request->input('troops', []), $miniGameScore);
+        $deckCards     = $request->input('deck_cards', []);
+
+        $result = $this->battleService->attack($userKingdom, $opponentKingdom, $request->input('troops', []), $miniGameScore, $deckCards);
         
         if (!$result['success']) {
-            return response()->json(['error' => $result['message']], 400);
+            return response()->json(['error' => $result['message'], 'shielded' => $result['shielded'] ?? false], 400);
         }
         
         // Mettre à jour les trophées en fonction du score
@@ -103,26 +106,65 @@ class BattleController extends Controller
         
         // Gagner un coffre en fonction du score
         $chest = null;
-        if ($miniGameScore > 100 || rand(1, 3) === 1) {
-            $chestTypes = ['silver', 'gold', 'magical'];
+        if ($result['attacker_won'] && ($miniGameScore > 100 || rand(1, 3) === 1)) {
             if ($miniGameScore > 100) {
                 $chestType = 'magical';
             } else if ($miniGameScore > 50) {
                 $chestType = 'gold';
             } else {
-                $chestType = $chestTypes[array_rand($chestTypes)];
+                $chestType = 'silver';
             }
             $chest = $user->chests()->create([
                 'type' => $chestType,
                 'status' => 'locked',
             ]);
         }
+
+        // Quête win_battle déjà incrémentée dans BattleService
+        // Détecter si l'utilisateur vient de progresser en arène
+        $arena = $this->getArena($user->fresh()->trophies);
         
         return response()->json([
             ...$result,
-            'user' => $user,
+            'user'         => $user->fresh(),
             'trophy_change' => $trophyChange,
-            'chest' => $chest,
+            'arena'        => $arena,
+            'chest'        => $chest,
         ]);
+    }
+
+    public function history(Request $request)
+    {
+        $user = $request->user();
+        $userKingdom = $user->kingdom;
+        if (!$userKingdom) {
+            return response()->json(['battles' => []]);
+        }
+        $battles = $this->battleService->getBattleHistory($userKingdom);
+        return response()->json(['battles' => $battles]);
+    }
+
+    /**
+     * Retourne le nom de l'arène selon les trophées
+     */
+    private function getArena(int $trophies): array
+    {
+        $arenas = [
+            ['name' => 'Camp d\'Entraînement', 'icon' => '🏕️', 'min' => 0,    'max' => 299],
+            ['name' => 'Goblin Stadium',        'icon' => '👺', 'min' => 300,  'max' => 599],
+            ['name' => 'Bone Pit',              'icon' => '💀', 'min' => 600,  'max' => 999],
+            ['name' => 'Barbarian Bowl',        'icon' => '⚔️', 'min' => 1000, 'max' => 1399],
+            ['name' => 'P.E.K.K.A\'s Playhouse','icon' => '🤖', 'min' => 1400, 'max' => 1799],
+            ['name' => 'Spell Valley',          'icon' => '✨', 'min' => 1800, 'max' => 2299],
+            ['name' => 'Légendaire',            'icon' => '🏆', 'min' => 2300, 'max' => PHP_INT_MAX],
+        ];
+
+        foreach ($arenas as $arena) {
+            if ($trophies >= $arena['min'] && $trophies <= $arena['max']) {
+                return $arena;
+            }
+        }
+
+        return $arenas[0];
     }
 }

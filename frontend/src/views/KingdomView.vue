@@ -5,9 +5,16 @@
         🏰 Mon Royaume
       </h1>
       <p class="text-xl text-blue-100">Gérez votre empire !</p>
-    </div>
-
-    <div class="kingdom-stats grid grid-cols-3 gap-8 mb-12">
+      <!-- Indicateur bouclier -->
+      <div v-if="kingdom?.is_shielded" class="mt-4 inline-flex items-center gap-2 bg-blue-900/60 border-2 border-blue-400 rounded-2xl px-6 py-3">
+        <span class="text-2xl">🛡️</span>
+        <span class="text-blue-200 font-bold">Royaume protégé — les ennemis ne peuvent pas vous attaquer</span>
+      </div>
+      <!-- Production passive -->
+      <div class="mt-3 text-blue-200 text-sm">
+        ⚙️ Vos bâtiments produisent des ressources automatiquement toutes les 15 minutes
+      </div>
+    </div>    <div class="kingdom-stats grid grid-cols-3 gap-8 mb-12">
       <div class="stat-card text-center p-8 rounded-3xl" style="background: linear-gradient(180deg, #ffc107 0%, #f57c00 100%); border: 4px solid #ffeb3b; box-shadow: 0 6px 0 #e65100, 0 10px 25px rgba(0,0,0,0.4);">
         <span class="text-5xl">💰</span>
         <div class="text-3xl font-black text-white mt-3">{{ kingdom?.gold || 0 }}</div>
@@ -18,7 +25,7 @@
         <div class="text-3xl font-black text-white mt-3">{{ kingdom?.wood || 0 }}</div>
         <div class="text-xl font-bold text-green-100">Bois</div>
       </div>
-      <div class="stat-card text-center p-8 rounded-3xl" style="background: linear-gradient(180deg, #e91e63 0%, #ad1457 100%); border: 4px solid #f48fb1; box-shadow: 0 6px 0 #880e4f, 0 10px 25px rgba(0,0,0,0.4);">
+      <div class="stat-card text-center p-8 rounded-3xl" style="background: linear-gradient(180deg, #e91e63 0%, #ad1457 100%); border: 4px solid #f48fb1; box-shadow: 0 6px 0 #7f0000, 0 10px 25px rgba(0,0,0,0.4);">
         <span class="text-5xl">🍖</span>
         <div class="text-3xl font-black text-white mt-3">{{ kingdom?.food || 0 }}</div>
         <div class="text-xl font-bold text-pink-100">Nourriture</div>
@@ -34,13 +41,7 @@
           v-for="building in buildings" 
           :key="building.id"
           class="building-card text-center p-8 rounded-3xl"
-          :style="{ 
-            background: `linear-gradient(180deg, ${getBuildingColor(building.type, 1)} 0%, ${getBuildingColor(building.type, 2)} 100%)`,
-            borderColor: getBuildingBorder(building.type),
-            borderWidth: '4px',
-            borderStyle: 'solid',
-            boxShadow: `0 6px 0 ${getBuildingShadow(building.type)}, 0 10px 25px rgba(0,0,0,0.4)`
-          }"
+          :style="getBuildingStyle(building.type)"
         >
           <div class="building-icon text-7xl mb-4">{{ getBuildingIcon(building.type) }}</div>
           <div class="building-name text-2xl font-black text-white mb-2">{{ getBuildingName(building.type) }}</div>
@@ -74,13 +75,7 @@
           v-for="soldier in soldiers" 
           :key="soldier.type"
           class="unit-card text-center p-8 rounded-3xl"
-          :style="{ 
-            background: `linear-gradient(180deg, ${getSoldierColor(soldier.type, 1)} 0%, ${getSoldierColor(soldier.type, 2)} 100%)`,
-            borderColor: getSoldierBorder(soldier.type),
-            borderWidth: '4px',
-            borderStyle: 'solid',
-            boxShadow: `0 6px 0 ${getSoldierShadow(soldier.type)}, 0 10px 25px rgba(0,0,0,0.4)`
-          }"
+          :style="getSoldierStyle(soldier.type)"
         >
           <div class="unit-icon text-7xl mb-4">{{ getSoldierIcon(soldier.type) }}</div>
           <div class="unit-name text-2xl font-black text-white mb-2">{{ getSoldierName(soldier.type) }}</div>
@@ -104,11 +99,11 @@
 
   <Modal 
     :is-open="showConfirmModal" 
-    icon="⬆️" 
-    title="Améliorer le bâtiment ?"
+    :icon="confirmModalIcon" 
+    :title="confirmModalTitle"
     :message="confirmModalMessage"
     @confirm="confirmAction"
-    @cancel="showConfirmModal = false"
+    @close="showConfirmModal = false"
   />
   <SuccessModal 
     :is-open="showSuccessModal" 
@@ -122,13 +117,17 @@
     icon="❌" 
     title="Erreur"
     :message="errorModalMessage"
+    :action-button="isResourceError"
+    :action-button-text="'Récupérer mon coffre quotidien 🎁'"
     @close="showErrorModal = false"
+    @action="handleResourceAction"
   />
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { getKingdom, getBuildings, getSoldiers, upgradeBuilding, trainSoldier } from '../services/api'
+import { useRouter } from 'vue-router'
+import { getKingdom, getBuildings, getSoldiers, upgradeBuilding, trainSoldier, claimDailyChest } from '../services/api'
 import Modal from '../components/Modal.vue'
 import SuccessModal from '../components/SuccessModal.vue'
 import ErrorModal from '../components/ErrorModal.vue'
@@ -136,17 +135,21 @@ import ErrorModal from '../components/ErrorModal.vue'
 export default {
   components: { Modal, SuccessModal, ErrorModal },
   setup() {
+    const router = useRouter()
     const kingdom = ref(null)
     const buildings = ref([])
     const soldiers = ref([])
     const showConfirmModal = ref(false)
     const showSuccessModal = ref(false)
     const showErrorModal = ref(false)
+    const confirmModalTitle = ref('Confirmation')
+    const confirmModalIcon = ref('❓')
     const confirmModalMessage = ref('')
     const successModalTitle = ref('')
     const successModalMessage = ref('')
     const errorModalMessage = ref('')
     const pendingAction = ref(null)
+    const isResourceError = ref(false)
 
     const buildingIcons = {
       'gold_mine': '💰',
@@ -221,11 +224,38 @@ export default {
       return buildingShadows[type] || '#424242'
     }
 
-    function getUpgradeCost(type, level) {
-      const baseCost = { gold: 100, wood: 50 }
+    function getBuildingStyle(type) {
       return {
-        gold: Math.floor(baseCost.gold * Math.pow(1.5, level - 1)),
-        wood: Math.floor(baseCost.wood * Math.pow(1.5, level - 1))
+        background: `linear-gradient(180deg, ${getBuildingColor(type, 1)} 0%, ${getBuildingColor(type, 2)} 100%)`,
+        borderColor: getBuildingBorder(type),
+        borderWidth: '4px',
+        borderStyle: 'solid',
+        boxShadow: `0 6px 0 ${getBuildingShadow(type)}, 0 10px 25px rgba(0,0,0,0.4)`
+      }
+    }
+
+    function getSoldierStyle(type) {
+      return {
+        background: `linear-gradient(180deg, ${getSoldierColor(type, 1)} 0%, ${getSoldierColor(type, 2)} 100%)`,
+        borderColor: getSoldierBorder(type),
+        borderWidth: '4px',
+        borderStyle: 'solid',
+        boxShadow: `0 6px 0 ${getSoldierShadow(type)}, 0 10px 25px rgba(0,0,0,0.4)`
+      }
+    }
+
+    function getUpgradeCost(type, level) {
+      const baseCosts = {
+        'gold_mine': { gold: 100, wood: 50 },
+        'sawmill': { gold: 80, wood: 100 },
+        'farm': { gold: 60, wood: 60 },
+        'barracks': { gold: 150, wood: 150 },
+      }
+      const baseCost = baseCosts[type] || { gold: 0, wood: 0 }
+      const multiplier = Math.pow(1.5, level - 1)
+      return {
+        gold: Math.floor(baseCost.gold * multiplier),
+        wood: Math.floor(baseCost.wood * multiplier),
       }
     }
 
@@ -267,6 +297,8 @@ export default {
 
     function handleUpgradeBuilding(building) {
       pendingAction.value = { type: 'upgrade', building }
+      confirmModalTitle.value = 'Améliorer le bâtiment ?'
+      confirmModalIcon.value = '⬆️'
       const cost = getUpgradeCost(building.type, building.level)
       confirmModalMessage.value = `Améliorer ${getBuildingName(building.type)} au niveau ${building.level + 1} ? (💰${cost.gold} 🪵${cost.wood})`
       showConfirmModal.value = true
@@ -274,6 +306,8 @@ export default {
 
     function handleTrainSoldier(soldier) {
       pendingAction.value = { type: 'train', soldier }
+      confirmModalTitle.value = 'Entraîner le soldat ?'
+      confirmModalIcon.value = '⚔️'
       confirmModalMessage.value = `Entraîner un ${getSoldierName(soldier.type)} pour 🍖${getTrainCost(soldier.type)} ?`
       showConfirmModal.value = true
     }
@@ -296,10 +330,32 @@ export default {
         await loadKingdomData()
       } catch (e) {
         errorModalMessage.value = e?.response?.data?.message || 'Erreur lors de l\'action'
+        isResourceError.value = errorModalMessage.value === 'Ressources insuffisantes'
         showErrorModal.value = true
       } finally {
         showConfirmModal.value = false
         pendingAction.value = null
+      }
+    }
+
+    async function handleResourceAction() {
+      console.log('handleResourceAction called!')
+      try {
+        // First close error modal
+        showErrorModal.value = false
+        isResourceError.value = false
+        
+        const res = await claimDailyChest()
+        console.log('claimDailyChest success!', res.data)
+        successModalTitle.value = 'Coffre récupéré ! 🎉'
+        successModalMessage.value = `Vous avez reçu 💰${res.data.reward.gold} Or, 🪵${res.data.reward.wood} Bois, 🍖${res.data.reward.food} Nourriture !`
+        showSuccessModal.value = true
+        await loadKingdomData()
+      } catch (e) {
+        console.error('claimDailyChest error!', e)
+        errorModalMessage.value = e?.response?.data?.message || 'Erreur lors de la récupération du coffre'
+        isResourceError.value = false
+        showErrorModal.value = true
       }
     }
 
@@ -318,20 +374,24 @@ export default {
       successModalTitle,
       successModalMessage,
       errorModalMessage,
+      isResourceError,
       handleUpgradeBuilding,
       handleTrainSoldier,
       confirmAction,
+      handleResourceAction,
       getBuildingIcon,
       getBuildingName,
       getBuildingColor,
       getBuildingBorder,
       getBuildingShadow,
+      getBuildingStyle,
       getUpgradeCost,
       getSoldierIcon,
       getSoldierName,
       getSoldierColor,
       getSoldierBorder,
       getSoldierShadow,
+      getSoldierStyle,
       getTrainCost
     }
   }

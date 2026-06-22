@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\BuildBuildingJob;
 use App\Models\Building;
 use App\Models\Kingdom;
+use App\Models\Quest;
 use Illuminate\Support\Facades\DB;
 
 class KingdomService
@@ -87,6 +88,11 @@ class KingdomService
             $building->update(['upgrade_ends_at' => $upgradeEndsAt]);
 
             BuildBuildingJob::dispatch($building->id)->delay($upgradeTime);
+
+            // Progression de la quête d'amélioration
+            if ($kingdom->user) {
+                Quest::addProgress($kingdom->user->id, 'upgrade_building', 1);
+            }
 
             return [
                 'success' => true,

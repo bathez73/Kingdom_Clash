@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\BattleController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChestController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\KingdomConquestController;
 use App\Http\Controllers\Api\KingdomController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\QuestController;
 use App\Http\Controllers\Api\SoldierController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kingdom/{id}', [KingdomController::class, 'getById']);
     Route::post('/kingdom/exchange-resources', [KingdomController::class, 'exchangeResources']);
     Route::post('/kingdom/daily-chest', [KingdomController::class, 'claimDailyChest']);
+    Route::post('/kingdom/{id}/conquer', [KingdomController::class, 'conquerKingdom']);
 
     // Administration - Corbeille (Soft Delete)
     Route::delete('/kingdom/{id}/soft-delete', [KingdomController::class, 'softDelete'])->middleware('role:admin');
@@ -69,6 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Chat global
     Route::post('/chat/send-message', [ChatController::class, 'sendMessage']);
+
+    // Quêtes journalières
+    Route::get('/quests', [QuestController::class, 'index']);
+    Route::post('/quests/{questId}/claim', [QuestController::class, 'claim']);
+
+    // Conquête de royaumes (War Arena)
+    Route::get('/conquest/kingdoms', [KingdomConquestController::class, 'index']);
+    Route::post('/conquest/conquer', [KingdomConquestController::class, 'conquer']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);

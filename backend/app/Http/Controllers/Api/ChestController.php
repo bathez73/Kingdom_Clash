@@ -75,9 +75,15 @@ class ChestController extends Controller
             'gold' => rand(100, 250),
             'magical' => rand(250, 500),
         };
+        $gemsReward = match ($chest->type) {
+            'silver' => rand(0, 5),
+            'gold' => rand(5, 20),
+            'magical' => rand(20, 50),
+        };
         
-        // Give gold
+        // Give gold and gems
         $user->gold += $goldReward;
+        $user->gems += $gemsReward;
         $user->save();
         
         // Give card copies
@@ -111,8 +117,11 @@ class ChestController extends Controller
         
         return response()->json([
             'message' => 'Chest opened successfully!',
-            'gold' => $goldReward,
-            'cards' => $rewardedCards,
+            'reward' => [
+                'gold' => $goldReward,
+                'gems' => $gemsReward,
+                'cards' => $rewardedCards
+            ],
             'user' => $user,
         ]);
     }

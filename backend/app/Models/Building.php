@@ -23,7 +23,7 @@ class Building extends Model
     }
 
     /**
-     * Calcul du coût d'amélioration : base_cost * (level * 1.5)
+     * Calcul du coût d'amélioration : base_cost * (1.5 ^ (level - 1))
      */
     public static function getUpgradeCost(string $type, int $currentLevel): array
     {
@@ -35,7 +35,7 @@ class Building extends Model
         ];
 
         $baseCost = $baseCosts[$type] ?? ['gold' => 0, 'wood' => 0];
-        $multiplier = $currentLevel * 1.5;
+        $multiplier = pow(1.5, $currentLevel - 1);
 
         return [
             'gold' => (int) ($baseCost['gold'] * $multiplier),

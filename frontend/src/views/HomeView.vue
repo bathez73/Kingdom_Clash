@@ -3,6 +3,7 @@
     <SplashScreen v-if="showSplash" @finished="onSplashFinished" />
 
     <div v-else class="hero-section">
+      <div class="bg-overlay"></div>
       <div class="card hero-card">
         <div class="hero-content">
           <div class="hero-icon-container">
@@ -50,6 +51,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SplashScreen from '../components/SplashScreen.vue'
 import CastleSVG from '../assets/castle.svg'
+import GameBg from '../assets/backgrounds/game.jpg'
+import GameBg2 from '../assets/backgrounds/game 1.jpg'
 
 export default {
   components: { SplashScreen },
@@ -66,22 +69,41 @@ export default {
       showSplash.value = false
     }
 
-    return { showSplash, onSplashFinished, CastleSVG }
+    return { showSplash, onSplashFinished, CastleSVG, GameBg, GameBg2 }
   },
 }
 </script>
 
 <style scoped>
 .hero-section {
+  position: relative;
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 1rem;
+  min-height: 100vh;
+  background-image: url('src/assets/backgrounds/game.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.85) 100%);
+  z-index: 0;
 }
 
 .hero-card {
   max-width: 1000px;
   width: 100%;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-content {

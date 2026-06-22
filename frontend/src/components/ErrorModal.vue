@@ -1,16 +1,19 @@
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="close">
     <div class="modal-content">
-      <div class="modal-icon text-7xl mb-4">{{ icon }}</div>
+      <div class="modal-icon text-7xl mb-4 cursor-pointer hover:scale-110 transition-transform" @click="close">{{ icon }}</div>
       <h2 class="text-3xl font-black text-center mb-4" style="color: #3e2723;">{{ title }}</h2>
       <p class="text-xl text-center mb-8" style="color: #5d4037;">{{ message }}</p>
-      <button 
-        @click="close"
-        class="w-full py-5 rounded-2xl font-black text-xl cursor-pointer transition-all"
-        style="background: linear-gradient(180deg, #ef5350 0%, #c62828 100%); color: white; box-shadow: 0 4px 0 #7f0000, 0 8px 20px rgba(0,0,0,0.3);"
-      >
-        Fermer
-      </button>
+      <div class="space-y-3">
+        <button 
+          v-if="actionButton"
+          @click="handleAction"
+          class="w-full py-5 rounded-2xl font-black text-xl cursor-pointer transition-all"
+          style="background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%); color: white; box-shadow: 0 4px 0 #1b5e20, 0 8px 20px rgba(0,0,0,0.3);"
+        >
+          {{ actionButtonText }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -21,14 +24,19 @@ export default {
     isOpen: { type: Boolean, default: false },
     icon: { type: String, default: '❌' },
     title: { type: String, default: 'Erreur' },
-    message: { type: String, default: '' }
+    message: { type: String, default: '' },
+    actionButton: { type: Boolean, default: false },
+    actionButtonText: { type: String, default: 'Cliquez ici' }
   },
-  emits: ['close'],
+  emits: ['close', 'action'],
   setup(props, { emit }) {
     const close = () => {
       emit('close')
     }
-    return { close }
+    const handleAction = () => {
+      emit('action')
+    }
+    return { close, handleAction }
   }
 }
 </script>

@@ -35,12 +35,12 @@
             </router-link>
             
             <router-link 
-              to="/battle" 
+              to="/war-arena" 
               class="flex flex-col items-center gap-1 text-gray-200 hover:text-white transition-colors"
               active-class="text-yellow-300"
             >
               <span class="text-3xl">⚔️</span>
-              <span class="text-xs font-bold">Bataille</span>
+              <span class="text-xs font-bold">Guerre</span>
             </router-link>
             
             <router-link 

@@ -9,10 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['user_id', 'name', 'level', 'gold', 'wood', 'food'])]
+#[Fillable(['user_id', 'name', 'level', 'gold', 'wood', 'food',
+           'last_resource_production_at', 'shield_ends_at',
+           'status', 'defense_power', 'gold_capacity', 'difficulty'])]
 class Kingdom extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $casts = [
+        'shield_ends_at'              => 'datetime',
+        'last_resource_production_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

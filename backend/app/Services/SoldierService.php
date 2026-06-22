@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\TrainSoldierJob;
 use App\Models\Kingdom;
+use App\Models\Quest;
 use App\Models\Soldier;
 use Illuminate\Support\Facades\DB;
 
@@ -33,6 +34,11 @@ class SoldierService
 
             for ($i = 0; $i < $quantity; $i++) {
                 TrainSoldierJob::dispatch($kingdom->id, $type)->delay($trainingTime * ($i + 1));
+            }
+
+            // Progression de la quête d'entraînement
+            if ($kingdom->user) {
+                Quest::addProgress($kingdom->user->id, 'train_soldiers', $quantity);
             }
 
             return [

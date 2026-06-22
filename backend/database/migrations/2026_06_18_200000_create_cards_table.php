@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('base_hp');
             $table->integer('elixir_cost');
             $table->string('icon'); // emoji
+            $table->string('image_path')->nullable();
             $table->timestamps();
         });
     }

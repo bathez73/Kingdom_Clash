@@ -36,6 +36,8 @@ class KingdomController extends Controller
                 'wood' => $kingdom->wood,
                 'food' => $kingdom->food,
                 'defense_power' => $kingdom->getDefensePower(),
+                'shield_ends_at' => $kingdom->shield_ends_at,
+                'is_shielded' => $kingdom->shield_ends_at && $kingdom->shield_ends_at->isFuture(),
                 'created_at' => $kingdom->created_at,
                 'owner' => $kingdom->user,
                 'buildings' => $kingdom->buildings,
@@ -163,5 +165,50 @@ class KingdomController extends Controller
         return response()->json([
             'message' => 'Royaume supprimé définitivement',
         ]);
+    }
+
+    public function conquerKingdom(Request $request, int $id): JsonResponse
+    {
+        $defenderKingdom = Kingdom::find($id);
+        $attackerKingdom = $request->user()->kingdom;
+
+        if (!$defenderKingdom) {
+            return response()->json([
+                'message' => 'Royaume cible non trouvé',
+            ], 404);
+        }
+
+        if (!$attackerKingdom) {
+            return response()->json([
+                'message' => 'Votre royaume n\'existe pas',
+            ], 400);
+        }
+
+        // Calculer les récompenses
+        $goldStolen = $defenderKingdom->gold / 2;
+        $trophiesEarned = $defenderKingdom->level * 10;
+
+        // Transférer le royaume (changer de propriétaire)
+        $defenderKingdom->update([
+            'user_id' => $request->user()->id,
+        ]);
+
+        // Récompenser le joueur
+        $attackerKingdom->update([
+            'gold' => \DB::raw("gold + {$goldStolen}"),
+        ]);
+
+        $request->user()->update([
+            'trophies' => \DB::raw("trophies + {$trophiesEarned}"),
+        ]);
+
+        return response()->json([
+            'message' => 'Royaume conquis avec succès !',
+            'kingdom' => $defenderKingdom,
+            'rewards' => [
+                'gold' => $goldStolen,
+                'trophies' => $trophiesEarned,
+            ],
+        ], 200);
     }
 }

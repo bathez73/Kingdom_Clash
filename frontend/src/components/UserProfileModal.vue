@@ -48,7 +48,7 @@
             class="flex-1 py-4 rounded-2xl font-black text-xl cursor-pointer transition-all"
             style="background: linear-gradient(180deg, #ef5350 0%, #c62828 100%); color: white; box-shadow: 0 4px 0 #7f0000, 0 6px 12px rgba(0,0,0,0.25);"
           >
-            🚪 Déconnexion
+             Déconnexion
           </button>
           <button 
             type="button" 

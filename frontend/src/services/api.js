@@ -30,11 +30,17 @@ api.interceptors.response.use(
   }
 )
 
-export function login(credentials) {
-  return api.post('/auth/login', credentials)
+export function login(emailOrCredentials, password) {
+  const payload = typeof emailOrCredentials === 'string'
+    ? { email: emailOrCredentials, password }
+    : emailOrCredentials
+  return api.post('/auth/login', payload)
 }
 
-export function register(payload) {
+export function register(nameOrPayload, email, password) {
+  const payload = typeof nameOrPayload === 'string'
+    ? { name: nameOrPayload, email, password, password_confirmation: password }
+    : { ...nameOrPayload, password_confirmation: nameOrPayload.password_confirmation || nameOrPayload.password }
   return api.post('/auth/register', payload)
 }
 
@@ -77,8 +83,8 @@ export function finishBattle(won) {
   return api.post('/battles/finish', { won })
 }
 
-export function attack(defenderId, troops, score = 0) {
-  return api.post(`/battles/attack/${defenderId}`, { troops, score })
+export function attack(defenderId, troops, score = 0, deckCards = []) {
+  return api.post(`/battles/attack/${defenderId}`, { troops, score, deck_cards: deckCards })
 }
 
 export function getBattleHistory() {
@@ -116,6 +122,10 @@ export function exchangeResources(from, to, quantity) {
 
 export function claimDailyChest() {
   return api.post('/kingdom/daily-chest')
+}
+
+export function conquerKingdom(kingdomId) {
+  return api.post(`/kingdom/${kingdomId}/conquer`)
 }
 
 export function getBuildings() {
@@ -204,6 +214,24 @@ export function getUser() {
 
 export function updateUser(data) {
   return api.put('/auth/user', data)
+}
+
+// Quêtes journalières
+export function getQuests() {
+  return api.get('/quests')
+}
+
+export function claimQuest(questId) {
+  return api.post(`/quests/${questId}/claim`)
+}
+
+// Conquête de royaumes (War Arena)
+export function getConquestKingdoms() {
+  return api.get('/conquest/kingdoms')
+}
+
+export function conquestConquer(payload) {
+  return api.post('/conquest/conquer', payload)
 }
 
 export default api

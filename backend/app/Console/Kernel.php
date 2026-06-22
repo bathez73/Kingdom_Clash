@@ -15,6 +15,10 @@ class Kernel extends ConsoleKernel
         // Réinitialiser les coffres quotidiens à minuit
         $schedule->command('app:reset-daily-chests')
             ->dailyAt('00:00');
+
+        // Production passive de ressources toutes les 15 minutes
+        $schedule->command('game:produce-resources')
+            ->everyFifteenMinutes();
     }
 
     /**

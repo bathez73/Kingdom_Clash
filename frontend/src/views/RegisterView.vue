@@ -109,7 +109,7 @@ export default {
 
       try {
         const response = await register(form.value.name, form.value.email, form.value.password)
-        setAuth(response.data.token, response.data.user)
+        setAuth(response.data)
         router.push('/')
       } catch (e) {
         error.value = e?.response?.data?.message || 'Erreur lors de la création du compte'
